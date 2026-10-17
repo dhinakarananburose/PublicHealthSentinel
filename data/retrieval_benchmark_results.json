@@ -1,0 +1,138 @@
+{
+  "benchmark_name": "PublicHealthSentinel Phase 6B.2 Synthetic Retrieval Benchmark",
+  "benchmark_context": "SYNTHETIC-DATA NOTICE: Evaluated exclusively against simulated public health reference materials. High benchmark retrieval scores do not imply clinical efficacy or diagnostic accuracy on authentic literature.",
+  "unanswerable_query_convention": "Negative control queries (target_doc_id = None) evaluate method selectivity. Rejection is satisfied when top similarity score is below 0.40 or zero results match.",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "total_synthetic_documents": 5,
+  "total_indexed_passages": 10,
+  "indexing_duration_ms": 47265.52,
+  "indexing_throughput_passages_per_sec": 0.2,
+  "total_queries_evaluated": 12,
+  "answerable_queries_count": 10,
+  "negative_control_queries_count": 2,
+  "metrics": {
+    "recall_at_1": 0.8,
+    "recall_at_3": 1.0,
+    "recall_at_5": 1.0,
+    "precision_at_1": 0.8,
+    "precision_at_3": 0.3333,
+    "precision_at_5": 0.2,
+    "mean_reciprocal_rank_mrr": 0.8833,
+    "negative_query_rejection_rate": 1.0,
+    "mean_query_latency_ms": 39.11,
+    "p95_query_latency_ms": 57.01
+  },
+  "memory_profile": {
+    "current_memory_mb": 251.92,
+    "peak_memory_mb": 256.43
+  },
+  "query_details": [
+    {
+      "query": "What statistical threshold triggers a respiratory surge alert?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-001",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.6553,
+      "latency_ms": 76.05
+    },
+    {
+      "query": "How many hours after a surge alert must secondary epidemiological review be completed?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-001",
+      "rank": 3,
+      "reciprocal_rank": 0.3333,
+      "top_similarity_score": 0.5236,
+      "latency_ms": 34.2
+    },
+    {
+      "query": "What is the clinical case definition for waterborne diarrheal illness?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-002",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.8416,
+      "latency_ms": 35.85
+    },
+    {
+      "query": "When should water utilities cross-reference turbidity measurements with clinic reports?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-002",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.6731,
+      "latency_ms": 32.05
+    },
+    {
+      "query": "What temperature and rash symptoms require immediate school student isolation?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-003",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.6401,
+      "latency_ms": 32.89
+    },
+    {
+      "query": "How fast must school nurses pull vaccination rosters for measles contacts?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-003",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.7175,
+      "latency_ms": 35.66
+    },
+    {
+      "query": "What travel history and incubation period criteria are used for viral hemorrhagic fever triage?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-004",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.6289,
+      "latency_ms": 37.82
+    },
+    {
+      "query": "What PPE equipment is required for filovirus barrier nursing?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-004",
+      "rank": 2,
+      "reciprocal_rank": 0.5,
+      "top_similarity_score": 0.4876,
+      "latency_ms": 36.96
+    },
+    {
+      "query": "How many days do mobility indicator changes precede peak respiratory clinic surges?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-005",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.7887,
+      "latency_ms": 35.15
+    },
+    {
+      "query": "Does augmenting autoregressive models with mobility indicators improve wave alert F1 score?",
+      "query_type": "answerable",
+      "target_doc_id": "syn-doc-005",
+      "rank": 1,
+      "reciprocal_rank": 1.0,
+      "top_similarity_score": 0.59,
+      "latency_ms": 41.44
+    },
+    {
+      "query": "What veterinary antibiotic dosage applies to feline viral rhinotracheitis?",
+      "query_type": "negative_control",
+      "target_doc_id": null,
+      "top_similarity_score": 0.3284,
+      "low_similarity_rejected": true,
+      "latency_ms": 34.98
+    },
+    {
+      "query": "How are agricultural crop pesticide tolerances calculated for citrus orchards?",
+      "query_type": "negative_control",
+      "target_doc_id": null,
+      "top_similarity_score": 0.2069,
+      "low_similarity_rejected": true,
+      "latency_ms": 36.29
+    }
+  ]
+}

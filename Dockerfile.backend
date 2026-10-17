@@ -1,0 +1,75 @@
+# ==============================================================================
+# PublicHealthSentinel — Phase 8B.2 Backend Dockerfile
+#
+# Production-oriented, memory-constrained container for syndromic surveillance
+# and evidence-grounded research assistance.
+#
+# Optimization highlights:
+# - Base image: python:3.11-slim (minimal Debian-based runtime)
+# - CPU-only PyTorch wheel (~180 MB instead of ~2.8 GB CUDA bundle)
+# - Preloaded sentence-transformers/all-MiniLM-L6-v2 embedding weights (~90 MB)
+# - Non-root execution as 'sentinel' (UID 1000)
+# - Native Python healthcheck probe (zero external curl/wget dependencies)
+# - Idempotent volume initialization that never overwrites existing user data
+# ==============================================================================
+
+FROM python:3.11-slim AS runtime
+
+# Set runtime environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src:/app \
+    DATA_DIR=/app/data \
+    DATABASE_URL=sqlite:////app/data/public_health_sentinel.db \
+    HF_HOME=/home/sentinel/.cache/huggingface \
+    APP_ENV=production \
+    DEBUG=false
+
+# Create unprivileged application user and runtime directories
+RUN groupadd -g 1000 sentinel && \
+    useradd -u 1000 -g sentinel -m -s /bin/bash sentinel && \
+    mkdir -p /app/data /app/seed_data/processed /app/seed_data/synthetic /home/sentinel/.cache/huggingface && \
+    chown -R sentinel:sentinel /app /home/sentinel
+
+WORKDIR /app
+
+# Upgrade base packaging tools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install CPU-only PyTorch wheel before application dependencies
+# to prevent pip from resolving bulky CUDA-enabled PyTorch distributions (~2.8 GB)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Copy packaging configuration and install PublicHealthSentinel package
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+RUN pip install --no-cache-dir .
+
+# Preload embedding model weights during image build as user sentinel
+# This ensures deterministic retrieval without runtime cold-start download latency.
+USER sentinel
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', device='cpu')"
+USER root
+
+# Copy seed datasets and management scripts
+COPY data/processed/ /app/seed_data/processed/
+COPY data/synthetic/ /app/seed_data/synthetic/
+COPY scripts/ /app/scripts/
+COPY reports/ /app/reports/
+
+# Ensure correct permissions and clean line endings for entrypoint
+RUN chmod +x /app/scripts/entrypoint.sh && \
+    chown -R sentinel:sentinel /app
+
+# Switch to unprivileged user
+USER sentinel
+
+# Container healthcheck using standard library urllib (no curl required)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
+
+EXPOSE 8000
+
+# Set entrypoint and default ASGI command (1 worker for 8 GB RAM laptop envelope)
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
+CMD ["uvicorn", "public_health_sentinel.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

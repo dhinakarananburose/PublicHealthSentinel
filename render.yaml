@@ -1,0 +1,59 @@
+# ==============================================================================
+# PublicHealthSentinel — Phase 10 Render Blueprint Configuration
+#
+# Enables 1-click zero-cost (₹0/month) portfolio cloud deployment on Render:
+# 1. Backend Web Service: FastAPI API in Public Demo Mode (512 MB Free Tier)
+# 2. Frontend Static Site: React + Vite + Tailwind SPA (Free Tier)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Backend Web Service: PublicHealthSentinel API
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: public-health-sentinel-api
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements-demo.txt && pip install -e . --no-deps
+    startCommand: uvicorn public_health_sentinel.api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DEMO_MODE
+        value: "true"
+      - key: EMBEDDING_PROVIDER
+        value: tfidf
+      - key: GENERATION_PROVIDER
+        value: demo
+      - key: CORS_ORIGIN_REGEX
+        value: "^https://.*\\.onrender\\.com$"
+
+  # ----------------------------------------------------------------------------
+  # Frontend Static Site: PublicHealthSentinel Dashboard
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: public-health-sentinel-dashboard
+    runtime: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: public-health-sentinel-api
+          property: host

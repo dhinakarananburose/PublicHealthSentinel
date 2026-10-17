@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "public-health-sentinel"
+version = "0.1.0"
+description = "Production-oriented public health anomaly detection research prototype"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "PublicHealthSentinel Contributors" }
+]
+keywords = [
+    "public-health",
+    "epidemiology",
+    "anomaly-detection",
+    "surveillance",
+    "syndromic-surveillance",
+    "mobility"
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "pydantic>=2.7.0",
+    "scipy>=1.12.0",
+    "matplotlib>=3.8.0",
+    "scikit-learn>=1.4.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "sentence-transformers>=2.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.27.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --strict-markers"

@@ -1,0 +1,76 @@
+{
+  "methods_evaluated": [
+    "rolling_mad"
+  ],
+  "injected_events_count": 3,
+  "metrics_by_method": {
+    "rolling_mad": {
+      "method": "rolling_mad",
+      "total_observations": 2700,
+      "eligible_evaluated_observations": 2595,
+      "warmup_un_evaluated_observations": 105,
+      "true_positives": 9,
+      "false_positives": 55,
+      "true_negatives": 2531,
+      "false_negatives": 0,
+      "precision": 0.1406,
+      "recall": 1.0,
+      "f1_score": 0.2465,
+      "specificity": 0.9787,
+      "false_alarm_rate_per_day": 0.0213,
+      "total_injected_events": 3,
+      "detected_events_count": 3,
+      "event_recall": 1.0,
+      "mean_detection_delay_days": 0.0,
+      "event_details": [
+        {
+          "event_id": "EVENT_01_REGION_A_Respiratory",
+          "start_date": "2026-02-15",
+          "region_id": "REGION_A",
+          "syndrome": "Respiratory",
+          "duration_days": 3,
+          "spike_count": 95,
+          "is_detected": true,
+          "detection_delay_days": 0,
+          "alert_dates": [
+            "2026-02-15",
+            "2026-02-16",
+            "2026-02-17"
+          ]
+        },
+        {
+          "event_id": "EVENT_02_REGION_C_Gastrointestinal",
+          "start_date": "2026-04-01",
+          "region_id": "REGION_C",
+          "syndrome": "Gastrointestinal",
+          "duration_days": 2,
+          "spike_count": 60,
+          "is_detected": true,
+          "detection_delay_days": 0,
+          "alert_dates": [
+            "2026-04-01",
+            "2026-04-02"
+          ]
+        },
+        {
+          "event_id": "EVENT_03_REGION_B_Febrile",
+          "start_date": "2026-05-11",
+          "region_id": "REGION_B",
+          "syndrome": "Febrile",
+          "duration_days": 4,
+          "spike_count": 120,
+          "is_detected": true,
+          "detection_delay_days": 0,
+          "alert_dates": [
+            "2026-05-11",
+            "2026-05-12",
+            "2026-05-13",
+            "2026-05-14"
+          ]
+        }
+      ],
+      "limitations": "STATISTICAL POWER LIMITATION: The benchmark evaluation dataset contains a small number of injected surge events (typically 3 events across 9 positive days). Metrics such as Precision, Recall, and F1 have wide binomial uncertainty. These scores demonstrate relative algorithmic behavior under synthetic benchmark conditions; they DO NOT establish real-world clinical sensitivity, diagnostic efficacy, or regulatory readiness."
+    }
+  },
+  "limitations": "STATISTICAL POWER LIMITATION: The benchmark evaluation dataset contains a small number of injected surge events (typically 3 events across 9 positive days). Metrics such as Precision, Recall, and F1 have wide binomial uncertainty. These scores demonstrate relative algorithmic behavior under synthetic benchmark conditions; they DO NOT establish real-world clinical sensitivity, diagnostic efficacy, or regulatory readiness."
+}

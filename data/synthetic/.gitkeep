@@ -1,0 +1,2 @@
+# Keep synthetic data directory in version control.
+# Benchmark simulated datasets generated for testing will be stored here.

@@ -1,0 +1,65 @@
+services:
+  backend:
+    image: public-health-sentinel-backend:latest
+    container_name: sentinel-backend
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - DEBUG=false
+      - DATA_DIR=/app/data
+      - DATABASE_URL=sqlite:////app/data/public_health_sentinel.db
+      - HF_HOME=/home/sentinel/.cache/huggingface
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.2:3b
+      - OLLAMA_TIMEOUT_SECONDS=90.0
+      - SENTINEL_OLLAMA_TIMEOUT_SECONDS=90.0
+      - OLLAMA_NUM_PREDICT=40
+      - SENTINEL_OLLAMA_NUM_PREDICT=40
+      - OLLAMA_KEEP_ALIVE=60m
+      - SENTINEL_OLLAMA_KEEP_ALIVE=60m
+      - ASSISTANT_MAX_CONTEXT_PASSAGES=2
+      - SENTINEL_ASSISTANT_MAX_CONTEXT_PASSAGES=2
+    volumes:
+      - sentinel_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sentinel_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: public-health-sentinel-frontend:latest
+    container_name: sentinel-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8081}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sentinel_net
+
+volumes:
+  sentinel_data:
+    name: sentinel_data
+
+networks:
+  sentinel_net:
+    name: sentinel_net
+    driver: bridge

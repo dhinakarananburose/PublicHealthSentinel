@@ -1,0 +1,73 @@
+{
+  "surveillance_by_syndrome": {
+    "Febrile": {
+      "count": 900,
+      "mean": 79.5,
+      "std": 45.14,
+      "min": 13,
+      "q25": 43.0,
+      "median": 70.0,
+      "q75": 108.0,
+      "max": 250,
+      "missing_count": 0
+    },
+    "Gastrointestinal": {
+      "count": 900,
+      "mean": 52.6,
+      "std": 29.61,
+      "min": 5,
+      "q25": 28.0,
+      "median": 45.0,
+      "q75": 72.0,
+      "max": 140,
+      "missing_count": 0
+    },
+    "Respiratory": {
+      "count": 900,
+      "mean": 122.95,
+      "std": 67.82,
+      "min": 26,
+      "q25": 67.0,
+      "median": 105.5,
+      "q75": 170.0,
+      "max": 337,
+      "missing_count": 0
+    }
+  },
+  "mobility_by_metric": {
+    "residential_pct_change": {
+      "count": 2700,
+      "mean": 9.52,
+      "std": 6.87,
+      "min": -3.69,
+      "q25": 3.83,
+      "median": 8.45,
+      "q75": 13.94,
+      "max": 27.19,
+      "missing_count": 0
+    },
+    "transit_station_pct_change": {
+      "count": 2700,
+      "mean": -20.69,
+      "std": 10.57,
+      "min": -48.13,
+      "q25": -28.65,
+      "median": -18.04,
+      "q75": -12.66,
+      "max": 1.33,
+      "missing_count": 0
+    },
+    "workplace_pct_change": {
+      "count": 2700,
+      "mean": -24.54,
+      "std": 26.09,
+      "min": -74.91,
+      "q25": -59.09,
+      "median": -10.82,
+      "q75": -5.8,
+      "max": 5.43,
+      "missing_count": 0
+    }
+  },
+  "missing_counts": {}
+}

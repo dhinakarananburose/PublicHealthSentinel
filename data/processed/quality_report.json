@@ -1,0 +1,97 @@
+{
+  "pipeline_version": "0.1.0",
+  "surveillance": {
+    "total_input_records": 2700,
+    "valid_records": 2700,
+    "invalid_records": 0,
+    "duplicate_key_count": 0,
+    "duplicate_keys": [],
+    "missing_observation_dates_count": 0,
+    "missing_observation_dates": [],
+    "missing_values_by_field": {
+      "reporting_facility_count": 120,
+      "population_denominator": 142
+    },
+    "region_coverage": {
+      "distinct_count": 5,
+      "regions": [
+        "REGION_A",
+        "REGION_B",
+        "REGION_C",
+        "REGION_D",
+        "REGION_E"
+      ],
+      "missing_from_expected": []
+    },
+    "syndrome_coverage": {
+      "distinct_count": 3,
+      "syndromes": [
+        "Febrile",
+        "Gastrointestinal",
+        "Respiratory"
+      ],
+      "missing_from_expected": []
+    },
+    "date_coverage": {
+      "start_date": "2026-01-01",
+      "end_date": "2026-06-29",
+      "span_days": 180,
+      "distinct_observed_dates_count": 180
+    },
+    "source_summary": {
+      "SYNTHETIC_GENERATOR": 2700
+    },
+    "data_status_summary": {
+      "simulated": 2700
+    }
+  },
+  "mobility": {
+    "total_input_records": 2700,
+    "valid_records": 2700,
+    "invalid_records": 0,
+    "duplicate_key_count": 0,
+    "duplicate_keys": [],
+    "missing_observation_dates_count": 0,
+    "missing_observation_dates": [],
+    "missing_values_by_field": {},
+    "region_coverage": {
+      "distinct_count": 5,
+      "regions": [
+        "REGION_A",
+        "REGION_B",
+        "REGION_C",
+        "REGION_D",
+        "REGION_E"
+      ],
+      "missing_from_expected": []
+    },
+    "metric_coverage": {
+      "distinct_count": 3,
+      "metrics": [
+        "residential_pct_change",
+        "transit_station_pct_change",
+        "workplace_pct_change"
+      ],
+      "missing_from_expected": []
+    },
+    "date_coverage": {
+      "start_date": "2026-01-01",
+      "end_date": "2026-06-29",
+      "span_days": 180,
+      "distinct_observed_dates_count": 180
+    },
+    "source_summary": {
+      "SYNTHETIC_MOBILITY_GENERATOR": 2700
+    },
+    "data_status_summary": {
+      "simulated": 2700
+    }
+  },
+  "files": {
+    "synthetic_spikes": "data\\synthetic\\synthetic_injected_spikes.csv",
+    "synthetic_surveillance": "data\\synthetic\\synthetic_surveillance.csv",
+    "synthetic_mobility": "data\\synthetic\\synthetic_mobility.csv",
+    "surveillance_observations": "data\\processed\\surveillance_observations.csv",
+    "mobility_indicators": "data\\processed\\mobility_indicators.csv"
+  }
+}

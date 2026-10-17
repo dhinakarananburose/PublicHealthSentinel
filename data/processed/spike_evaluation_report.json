@@ -1,0 +1,78 @@
+{
+  "injected_events_count": 3,
+  "events": [
+    {
+      "observation_date": "2026-02-15",
+      "region_id": "REGION_A",
+      "syndrome": "Respiratory",
+      "spike_count": 95,
+      "duration_days": 3,
+      "description": "Mid-season localized respiratory surge"
+    },
+    {
+      "observation_date": "2026-04-01",
+      "region_id": "REGION_C",
+      "syndrome": "Gastrointestinal",
+      "spike_count": 60,
+      "duration_days": 2,
+      "description": "Food/water-borne gastrointestinal cluster"
+    },
+    {
+      "observation_date": "2026-05-11",
+      "region_id": "REGION_B",
+      "syndrome": "Febrile",
+      "spike_count": 120,
+      "duration_days": 4,
+      "description": "Multi-day unexplained febrile cluster"
+    }
+  ],
+  "evaluation_by_method": {
+    "rolling_mad": [
+      {
+        "event_id": "EVENT_01_REGION_A_Respiratory",
+        "start_date": "2026-02-15",
+        "region_id": "REGION_A",
+        "syndrome": "Respiratory",
+        "duration_days": 3,
+        "spike_count": 95,
+        "is_detected": true,
+        "detection_delay_days": 0,
+        "alert_dates": [
+          "2026-02-15",
+          "2026-02-16",
+          "2026-02-17"
+        ]
+      },
+      {
+        "event_id": "EVENT_02_REGION_C_Gastrointestinal",
+        "start_date": "2026-04-01",
+        "region_id": "REGION_C",
+        "syndrome": "Gastrointestinal",
+        "duration_days": 2,
+        "spike_count": 60,
+        "is_detected": true,
+        "detection_delay_days": 0,
+        "alert_dates": [
+          "2026-04-01",
+          "2026-04-02"
+        ]
+      },
+      {
+        "event_id": "EVENT_03_REGION_B_Febrile",
+        "start_date": "2026-05-11",
+        "region_id": "REGION_B",
+        "syndrome": "Febrile",
+        "duration_days": 4,
+        "spike_count": 120,
+        "is_detected": true,
+        "detection_delay_days": 0,
+        "alert_dates": [
+          "2026-05-11",
+          "2026-05-12",
+          "2026-05-13",
+          "2026-05-14"
+        ]
+      }
+    ]
+  }
+}

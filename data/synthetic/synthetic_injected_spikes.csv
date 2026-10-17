@@ -1,0 +1,4 @@
+observation_date,region_id,syndrome,spike_count,duration_days,description
+2026-02-15,REGION_A,Respiratory,95,3,Mid-season localized respiratory surge
+2026-04-01,REGION_C,Gastrointestinal,60,2,Food/water-borne gastrointestinal cluster
+2026-05-11,REGION_B,Febrile,120,4,Multi-day unexplained febrile cluster

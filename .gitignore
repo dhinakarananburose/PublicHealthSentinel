@@ -1,0 +1,108 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Local databases & storage
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+
+# Frontend dependencies and builds
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Data artifacts & datasets (keep synthetic demonstration fixtures tracked for cloud seeding)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/*.csv
+!data/processed/*.json
+data/synthetic/*
+!data/synthetic/.gitkeep
+!data/synthetic/*.csv
+!data/synthetic/*.json
+data/index/*
+!data/index/.gitkeep
+data/documents/*
+!data/documents/.gitkeep
+
+# Machine learning model artifacts & checkpoints
+models/*.joblib
+models/*.pkl
+models/*.onnx
+models/*.pt
+models/*.pth
+checkpoints/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing, Coverage & Scratch
+scratch/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+ehthumbs.db

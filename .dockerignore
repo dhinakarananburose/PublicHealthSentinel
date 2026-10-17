@@ -1,0 +1,71 @@
+# Version control
+.git/
+.gitignore
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Frontend (backend image only)
+frontend/
+
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Test, coverage, and benchmarking caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+tests/
+
+# Local databases and runtime state
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/documents/
+data/index/
+data/raw/
+data/*.json
+
+# Scratch scripts, temporary files, and reports
+scratch/
+reports/
+logs/
+*.log
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# IDE and OS artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
