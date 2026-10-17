@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'
-import { Select } from '@/components/common/Select'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, formatScore } from '@/lib/utils'
 import type { RunDetectionRequest, RunDetectionResponse } from '@/types/api'
 import type { NavItemKey } from '@/components/layout/Sidebar'
 import {
@@ -15,10 +14,12 @@ import {
   CheckCircle2,
   Database,
   FlaskConical,
+  Lock,
   Play,
   RotateCcw,
+  ShieldAlert,
   Sliders,
-  TrendingUp,
+  Sparkles,
 } from 'lucide-react'
 
 interface PipelineLabPageProps {
@@ -27,6 +28,14 @@ interface PipelineLabPageProps {
 
 export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) => {
   const queryClient = useQueryClient()
+
+  // Detect whether the backend is operating in public demo mode
+  const { data: healthData } = useQuery({
+    queryKey: ['global_health_probe'],
+    queryFn: () => api.getHealth(),
+    staleTime: 60000,
+  })
+  const isDemoMode = Boolean(healthData?.demo_mode)
 
   // Form parameter states with validated defaults matching FastAPI backend
   const [method, setMethod] = useState<'all' | 'rolling_mad' | 'ewma' | 'zscore'>('all')
@@ -38,6 +47,19 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [executionResult, setExecutionResult] = useState<RunDetectionResponse | null>(null)
+
+  // Read-only benchmark preview query for existing pre-computed anomalies (safe: zero database writes)
+  const { data: benchmarkAnomalies, isLoading: isBenchmarkLoading } = useQuery({
+    queryKey: ['benchmark_anomalies_preview', method],
+    queryFn: () =>
+      api.getAnomalies({
+        page: 1,
+        page_size: 6,
+        is_anomaly: true,
+        method: method === 'all' ? undefined : method,
+      }),
+    staleTime: 60000,
+  })
 
   // Validation function
   const validateForm = (): boolean => {
@@ -63,7 +85,6 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
     mutationFn: (payload: RunDetectionRequest) => api.runDetectionPipeline(payload),
     onSuccess: (data) => {
       setExecutionResult(data)
-      // Invalidate relevant anomaly and surveillance queries so other views get fresh data
       queryClient.invalidateQueries({ queryKey: ['anomalies_intelligence'] })
       queryClient.invalidateQueries({ queryKey: ['anomalies_flagged'] })
       queryClient.invalidateQueries({ queryKey: ['anomalies_all'] })
@@ -72,6 +93,11 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    // Explicit client-side safety guard in demo mode: prevent triggering backend writes
+    if (isDemoMode) {
+      return
+    }
+
     if (!validateForm()) return
 
     const payload: RunDetectionRequest = {
@@ -106,18 +132,54 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
               Statistical Anomaly Detection Pipeline Lab
             </CardTitle>
             <CardDescription>
-              Execute real anomaly detection over historical surveillance observations. Configure window size, threshold, and algorithm parameters.
+              Configure lookback window, sensitivity thresholds, and mathematical detection algorithms over historical surveillance observations.
             </CardDescription>
           </div>
-          <Badge variant="info">Live Execution Engine</Badge>
+          <Badge variant={isDemoMode ? 'warning' : 'info'}>
+            {isDemoMode ? 'Demo Guard Active' : 'Live Execution Engine'}
+          </Badge>
         </CardHeader>
       </Card>
+
+      {/* Public Demo Mode Informational Banner */}
+      {isDemoMode && (
+        <div
+          id="pipeline-demo-banner"
+          className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 flex items-start gap-3.5 shadow-sm"
+        >
+          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-2 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+                  Public Demonstration Mode Active
+                </h4>
+                <Badge variant="warning" size="sm">Analytical Execution Disabled</Badge>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onNavigate('anomalies')}
+                rightIcon={<ArrowRight className="w-3 h-3" />}
+              >
+                View Existing Anomaly Results
+              </Button>
+            </div>
+            <p className="text-xs text-amber-200/90 leading-relaxed">
+              Live analytical pipeline execution and database writes are disabled in this public demonstration to safeguard benchmark dataset integrity and adhere to Render Free 512 MB compute constraints.
+            </p>
+            <p className="text-[11px] text-amber-300/80">
+              Parameter controls below remain fully interactive for exploratory benchmarking. Use the read-only preview panel on the right to inspect pre-computed baseline anomalies without running analytical jobs.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Execution Form */}
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-teal-400" />
                 Pipeline Parameters
@@ -149,7 +211,7 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
                     <option value="zscore">zscore — Standard Rolling Mean / Std Dev</option>
                   </select>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Selects which analytical algorithms will process the chronological observation window.
+                    Selects which analytical algorithms process the chronological observation window.
                   </p>
                 </div>
 
@@ -220,53 +282,95 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
                       Persist Evaluation Results to Database
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      Upserts anomaly flags and scores to the relational database table.
+                      {isDemoMode
+                        ? 'Disabled by demo guard: database write operations are locked.'
+                        : 'Upserts anomaly flags and scores to the relational database table.'}
                     </span>
                   </div>
                   <input
                     type="checkbox"
-                    checked={persistResults}
+                    checked={persistResults && !isDemoMode}
+                    disabled={isDemoMode}
                     aria-label="Persist evaluation results to database"
                     onChange={(e) => setPersistResults(e.target.checked)}
-                    className="w-4 h-4 rounded border-navy-700 bg-navy-900 text-cyan-500 focus:ring-cyan-500/40 cursor-pointer"
+                    className="w-4 h-4 rounded border-navy-700 bg-navy-900 text-cyan-500 focus:ring-cyan-500/40 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {runMutation.isError && (
-                  <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-xs text-rose-300 flex items-start gap-2">
+                  <div className="p-3.5 rounded-lg bg-rose-950/60 border border-rose-800 text-xs text-rose-300 flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                    <div>
-                      <strong>Execution Failure:</strong>{' '}
-                      {(runMutation.error as any)?.message || 'Pipeline failed during execution.'}
+                    <div className="space-y-1">
+                      <strong className="block font-semibold">Execution Blocked:</strong>
+                      <p>{(runMutation.error as any)?.message || 'Pipeline execution failed or was rejected.'}</p>
+                      <div className="pt-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onNavigate('anomalies')}
+                          rightIcon={<ArrowRight className="w-3 h-3" />}
+                        >
+                          Switch to Anomaly Intelligence
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button
-                    type="submit"
-                    variant="teal"
-                    size="md"
-                    isLoading={runMutation.isPending}
-                    leftIcon={<Play className="w-4 h-4" />}
-                    disabled={runMutation.isPending}
-                  >
-                    Run Detection Pipeline
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-navy-800">
+                  <div className="flex items-center gap-2">
+                    {isDemoMode ? (
+                      <span className="text-xs text-amber-300/90 flex items-center gap-1.5 font-medium">
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        Execution guarded against writes in public demo.
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400">
+                        Ready to process historical surveillance records.
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="md"
+                      onClick={() => onNavigate('anomalies')}
+                      rightIcon={<ArrowRight className="w-4 h-4" />}
+                    >
+                      View Existing Anomaly Results
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="teal"
+                      size="md"
+                      isLoading={runMutation.isPending}
+                      leftIcon={isDemoMode ? <Lock className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      disabled={isDemoMode || runMutation.isPending}
+                      title={
+                        isDemoMode
+                          ? 'Analytical pipeline execution is disabled in public demonstration mode'
+                          : undefined
+                      }
+                    >
+                      {isDemoMode ? 'Execution Disabled in Demo' : 'Run Detection Pipeline'}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </CardContent>
           </Card>
         </div>
 
-        {/* Execution Result Summary Panel */}
+        {/* Execution Result or Read-Only Benchmark Preview Panel */}
         <div className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-xs font-semibold flex items-center gap-2 uppercase tracking-wider text-slate-300">
-                <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                Pipeline Execution Audit
+                <Database className="w-4 h-4 text-cyan-400" />
+                {isDemoMode ? 'Benchmark Results Preview' : 'Pipeline Execution Audit'}
               </CardTitle>
+              {isDemoMode && <Badge variant="outline" size="sm">Read-Only</Badge>}
             </CardHeader>
             <CardContent className="space-y-3 p-4 pt-0 text-xs">
               {executionResult ? (
@@ -326,6 +430,86 @@ export const PipelineLabPage: React.FC<PipelineLabPageProps> = ({ onNavigate }) 
                       rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
                     >
                       Inspect Anomalies in Intelligence
+                    </Button>
+                  </div>
+                </div>
+              ) : isDemoMode ? (
+                /* Read-Only Pre-Computed Benchmark Preview */
+                <div className="space-y-3.5">
+                  <div className="p-3 rounded-lg bg-navy-950 border border-navy-800 text-slate-300 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-slate-200 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                        Pre-Computed Baseline
+                      </span>
+                      <Badge variant="success" size="sm">0 DB Writes</Badge>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Benchmark detection results are pre-computed across 2,700 surveillance records for instant exploration.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1 text-xs">
+                    <div className="flex justify-between py-1 border-b border-navy-800">
+                      <span className="text-slate-400">Total Observations:</span>
+                      <span className="font-mono font-semibold text-slate-100">
+                        2,700 obs
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-navy-800">
+                      <span className="text-slate-400">Active Method Filter:</span>
+                      <span className="font-mono font-semibold text-cyan-400">
+                        {method.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-navy-800">
+                      <span className="text-slate-400">Flagged Benchmark Surges:</span>
+                      <span className="font-mono text-rose-400 font-semibold">
+                        {isBenchmarkLoading ? '...' : (benchmarkAnomalies?.total ?? 64)} anomalies
+                      </span>
+                    </div>
+                  </div>
+
+                  {benchmarkAnomalies && benchmarkAnomalies.items.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                        Sample Flagged Outbreaks:
+                      </span>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {benchmarkAnomalies.items.slice(0, 4).map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2 rounded bg-navy-950 border border-navy-800 font-mono text-[11px] flex items-center justify-between gap-2"
+                          >
+                            <div className="truncate">
+                              <span className="text-slate-200 font-semibold">{item.region_id}</span>
+                              <span className="text-slate-500 mx-1">•</span>
+                              <span className="text-cyan-400">{item.syndrome}</span>
+                              <span className="text-slate-500 block text-[10px]">{item.observation_date}</span>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <Badge variant="danger" size="sm">
+                                score: {formatScore(item.anomaly_score)}
+                              </Badge>
+                              <span className="block text-[10px] text-slate-400 mt-0.5">
+                                count: {item.observed_count}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <Button
+                      size="sm"
+                      variant="teal"
+                      className="w-full"
+                      onClick={() => onNavigate('anomalies')}
+                      rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                    >
+                      Inspect All Anomalies in Intelligence
                     </Button>
                   </div>
                 </div>

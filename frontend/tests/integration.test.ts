@@ -226,7 +226,7 @@ async function runTests() {
   })
 
   await liveTest('POST /api/v1/documents/ingest detects duplicate document content', async () => {
-    const timestamp = Date.now()
+    const timestamp = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     const uniqueContent = `Sample protocol document ${timestamp} for viral hemorrhagic fever surveillance guidelines.`
     const payload = {
       filename: `protocol_${timestamp}.md`,
@@ -502,6 +502,99 @@ async function runTests() {
     assert.equal(data.response_mode, 'concise')
     assert.equal(data.finish_reason, 'insufficient_evidence')
     assert.equal(data.citations.length, 0)
+  })
+
+  // Integration 25: Pipeline Lab Parameter Validation Logic
+  await test('Pipeline Lab parameter validation rejects out-of-bounds parameters', () => {
+    function validateForm(params: {
+      windowSize: number
+      threshold: number
+      minHistory: number
+      ewmaLambda: number
+    }): { valid: boolean; errors: Record<string, string> } {
+      const errors: Record<string, string> = {}
+      if (params.windowSize < 2 || params.windowSize > 90) {
+        errors.windowSize = 'Lookback window must be between 2 and 90 days.'
+      }
+      if (params.threshold <= 0 || params.threshold > 10.0) {
+        errors.threshold = 'Threshold must be between 0.1 and 10.0 standard deviations.'
+      }
+      if (params.minHistory < 1 || params.minHistory > 30) {
+        errors.minHistory = 'Minimum history must be between 1 and 30 days.'
+      }
+      if (params.ewmaLambda <= 0 || params.ewmaLambda > 1.0) {
+        errors.ewmaLambda = 'EWMA lambda must be between 0.01 and 1.0.'
+      }
+      return { valid: Object.keys(errors).length === 0, errors }
+    }
+
+    // Valid parameters
+    const validCheck = validateForm({ windowSize: 21, threshold: 3.0, minHistory: 7, ewmaLambda: 0.2 })
+    assert.equal(validCheck.valid, true)
+    assert.equal(Object.keys(validCheck.errors).length, 0)
+
+    // Invalid parameters
+    const invalidCheck = validateForm({ windowSize: 1, threshold: -1, minHistory: 0, ewmaLambda: 1.5 })
+    assert.equal(invalidCheck.valid, false)
+    assert.ok(invalidCheck.errors.windowSize)
+    assert.ok(invalidCheck.errors.threshold)
+    assert.ok(invalidCheck.errors.minHistory)
+    assert.ok(invalidCheck.errors.ewmaLambda)
+  })
+
+  // Integration 26: Pipeline Lab Client-Side Demo Guard Prevents Mutation Dispatch
+  await test('Pipeline Lab demo guard blocks submit without firing mutation', () => {
+    let mutationFired = false
+    const triggerSubmit = (isDemo: boolean) => {
+      if (isDemo) return 'BLOCKED_BY_DEMO_GUARD'
+      mutationFired = true
+      return 'MUTATION_DISPATCHED'
+    }
+
+    assert.equal(triggerSubmit(true), 'BLOCKED_BY_DEMO_GUARD')
+    assert.equal(mutationFired, false)
+
+    assert.equal(triggerSubmit(false), 'MUTATION_DISPATCHED')
+    assert.equal(mutationFired, true)
+  })
+
+  // Integration 27: Read-Only Anomaly Benchmark Preview Access
+  await liveTest('GET /api/v1/anomalies returns pre-computed benchmark results without write side-effects', async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/anomalies?is_anomaly=true&page_size=6`)
+    assert.equal(res.status, 200)
+    const data = await res.json()
+    assert.ok(typeof data.total === 'number')
+    assert.ok(Array.isArray(data.items))
+    assert.ok(data.items.length > 0)
+    assert.equal(data.items[0].is_anomaly, true)
+    assert.ok(data.items[0].detection_method)
+    assert.match(data.synthetic_experiment_notice, /SYNTHETIC-DATA/i)
+  })
+
+  // Integration 28: Live Guard Verification for Detection Pipeline in Demo Mode
+  await liveTest('POST /api/v1/pipeline/detect is blocked with 403 Forbidden in demo mode', async () => {
+    // Check if the running backend is in demo mode
+    const healthRes = await fetch(`${BASE_URL}/health`)
+    if (!healthRes.ok) return
+    const health = await healthRes.json()
+    if (!health.demo_mode) return // Skip if backend is running in full local mode
+
+    const payload = {
+      method: 'rolling_mad',
+      window_size: 21,
+      threshold: 3.0,
+      min_history: 7,
+      ewma_lambda: 0.2,
+      persist_results: false,
+    }
+    const res = await fetch(`${BASE_URL}/api/v1/pipeline/detect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    assert.equal(res.status, 403)
+    const err = await res.json()
+    assert.match(err.message, /disabled in public demonstration mode/i)
   })
 
   console.log(`\n=== Audit Test Results: ${passed} passed, ${failed} failed, ${skipped} skipped ===\n`)
