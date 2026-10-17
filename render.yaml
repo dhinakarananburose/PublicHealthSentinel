@@ -41,7 +41,6 @@ services:
   - type: web
     name: public-health-sentinel-dashboard
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
