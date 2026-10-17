@@ -100,6 +100,40 @@ FIXTURE_DOCUMENTS = [
             "Mobility shifts represent indirect population behavior and must not be used as the sole trigger for emergency public health restrictions."
         ),
     },
+    {
+        "filename": "statistical_anomaly_detection_methods.md",
+        "title": "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol",
+        "publisher": "Synthetic Epidemiological Analytics Group",
+        "content": (
+            "# Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol\n\n"
+            "## Section 1: Rolling MAD Dispersion Formula and Outlier Robustness\n"
+            "In syndromic surveillance time series, dispersion measures expected variation around a rolling baseline. "
+            "The Rolling Median Absolute Deviation (MAD) calculates non-parametric dispersion and handles outliers over past counts X:\n"
+            "    raw_mad = median(|X_i - median(X)|)\n"
+            "To estimate scale equivalent to standard deviation under normal distribution assumptions, raw MAD is scaled by:\n"
+            "    scale = 1.4826 * raw_mad\n"
+            "Rolling MAD provides a 50% breakdown point: up to half the historical window can consist of extreme outbreak surges or "
+            "outliers without distorting baseline dispersion, unlike standard deviation (0% breakdown point).\n\n"
+            "## Section 2: Anomaly Thresholding and Scale Floors\n"
+            "The standardized anomaly score is evaluated as score = (observed_count - median(X)) / scale. "
+            "A statistical surge alert triggers when score >= threshold (typically 3.0 robust standard deviations). "
+            "If raw_mad equals zero (occurring when more than 50% of counts in the lookback window are identical, common in sparse "
+            "or low-count syndromes), scale estimation falls back to mean absolute deviation multiplied by 1.2533, or a minimum "
+            "scale floor to prevent division by zero.\n\n"
+            "## Section 3: Comparative Usage with EWMA and Rolling Z-Score\n"
+            "Surveillance pipelines evaluate three complementary statistical anomaly detectors:\n"
+            "1. Rolling MAD: Non-parametric detector prioritizing outlier resistance across skewed syndromic counts with 50% breakdown robustness.\n"
+            "2. Exponentially Weighted Moving Average (EWMA): Applies geometric smoothing weights lambda in (0, 1] (default: 0.2) to historical "
+            "counts, tracking subtle multi-day trends with finite-horizon variance correction.\n"
+            "3. Rolling Z-Score: Standard parametric moving average and standard deviation detector (score = (count - mean) / std), "
+            "optimal when counts are approximately normal and free of severe outliers.\n\n"
+            "## Section 4: Interpretation and Limitations of Statistical Alerts\n"
+            "SYNTHETIC RESEARCH NOTICE: Statistical surge alerts indicate departure from simulated historical baseline behavior and do not "
+            "establish clinical diagnosis or confirm a real-world outbreak. Algorithmic detections require secondary epidemiological "
+            "review within 4 hours to rule out electronic health record coding shifts, holiday reporting lags, or facility batching "
+            "artifacts before escalating."
+        ),
+    },
 ]
 
 

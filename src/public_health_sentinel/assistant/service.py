@@ -221,11 +221,24 @@ class EvidenceGroundedAssistant:
                 )
 
             tags_summary = " ".join(f"[{c.citation_id}]" for c in demo_citations)
+            if sufficiency == "PARTIAL":
+                sufficiency_detail = (
+                    f"Retrieval confidence is PARTIAL (top similarity score: {max_score:.3f}). "
+                    "Citation verification confirms authentic database provenance from the indexed Evidence Library, "
+                    "not generative claim validation. Please review the passage excerpts directly to confirm "
+                    "how thoroughly they address your specific inquiry."
+                )
+            else:
+                sufficiency_detail = (
+                    f"Retrieval confidence is SUFFICIENT (top similarity score: {max_score:.3f}). "
+                    "The passages below are authentic indexed protocols with verified database provenance."
+                )
+
             demo_answer = (
                 f"PUBLIC DEMO NOTICE: In this free-tier cloud demonstration (512 MB RAM limit), local LLM neural "
                 f"synthesis is disabled to respect hosting budget constraints (₹0/month). "
-                f"Below are the {len(passage_refs)} authentic reference protocol passages {tags_summary} "
-                "retrieved from the Evidence Library with verified citation provenance matching your inquiry."
+                f"{sufficiency_detail}\n\n"
+                f"Retrieved authentic reference protocol passages: {tags_summary}"
             )
 
             return AssistantAskResponse(
@@ -241,7 +254,7 @@ class EvidenceGroundedAssistant:
                 response_type="evidence_fallback",
                 finish_reason="demo_mode",
                 response_mode=request.mode,
-                warning="AI neural synthesis unavailable in public demo mode. Displaying verified evidence passages directly.",
+                warning="Generative AI synthesis disabled in public demo mode. Provenance confirms authentic database retrieval, not semantic proof.",
             )
 
         try:

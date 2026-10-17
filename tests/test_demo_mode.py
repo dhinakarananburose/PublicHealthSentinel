@@ -16,6 +16,8 @@ from public_health_sentinel.db.models import (
     SurveillanceObservationModel,
 )
 from public_health_sentinel.db.demo_seeder import is_db_empty, seed_demo_data_if_needed
+from public_health_sentinel.assistant.service import get_assistant
+from public_health_sentinel.assistant.schemas import AssistantAskRequest
 from public_health_sentinel.api.app import app
 
 
@@ -52,7 +54,7 @@ def test_demo_seeder_initializes_and_idempotent(memory_db_session):
     assert surv_count == 2700
     assert mob_count == 2700
     assert anom_count == 2700
-    assert chunk_count == 6
+    assert chunk_count == 10
 
     # Second run should be a no-op (idempotent)
     second_run = seed_demo_data_if_needed(memory_db_session)
@@ -200,3 +202,76 @@ def test_figure_generation_requires_matplotlib(tmp_path):
 
         with pytest.raises(ImportError, match="matplotlib is required for plotting cross-correlation profiles"):
             plot_cross_correlation_profile([], tmp_path / "test.png")
+
+
+def test_rolling_mad_retrieval_ranking_and_content_verification(memory_db_session):
+    """Verify that theoretical Rolling MAD queries retrieve the methodology protocol as top rank.
+
+    Validates Phase 2 requirements:
+    1. Rolling MAD question retrieves methodology document as its top-ranked result.
+    2. Top result contains the MAD formula, scaling factor, and outlier-robustness explanation.
+    3. The respiratory threshold protocol is not the primary result for theoretical MAD questions.
+    4. The respiratory threshold question still retrieves the respiratory protocol.
+    5. Queries with genuinely insufficient evidence remain insufficient (< 0.30 cutoff).
+    6. Existing evidence citation identifiers and offsets remain valid.
+    """
+    seed_demo_data_if_needed(memory_db_session)
+
+    with patch.dict(os.environ, {"DEMO_MODE": "true", "EMBEDDING_PROVIDER": "tfidf", "GENERATION_PROVIDER": "demo"}):
+        get_config.cache_clear()
+        assistant = get_assistant()
+
+        # 1 & 2: Theoretical Rolling MAD query
+        mad_request = AssistantAskRequest(
+            question="How does Rolling Median Absolute Deviation (MAD) calculate dispersion and handle outliers?",
+            min_similarity=0.30,
+        )
+        mad_resp = assistant.ask(session=memory_db_session, request=mad_request)
+
+        assert mad_resp.evidence_sufficiency in {"SUFFICIENT", "PARTIAL"}
+        assert len(mad_resp.retrieved_passages) > 0
+
+        # Requirement 1: Methodology document is top-ranked
+        top_passage = mad_resp.retrieved_passages[0]
+        assert "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol" in top_passage.title
+
+        # Requirement 2: Top result contains the MAD formula and outlier-robustness explanation
+        assert "raw_mad = median(|X_i - median(X)|)" in top_passage.text
+        assert "scale = 1.4826 * raw_mad" in top_passage.text
+        assert "50% breakdown point" in top_passage.text
+        assert "outlier" in top_passage.text.lower()
+        assert "dispersion" in top_passage.text.lower()
+
+        # Requirement 3: Respiratory protocol is NOT the primary result
+        assert top_passage.title != "Respiratory Surge Statistical Threshold Protocol"
+
+        # Requirement 4: Respiratory threshold question still retrieves respiratory protocol as primary
+        resp_request = AssistantAskRequest(
+            question="What is the threshold for respiratory surge alerts in emergency departments?",
+            min_similarity=0.30,
+        )
+        resp_resp = assistant.ask(session=memory_db_session, request=resp_request)
+        assert len(resp_resp.retrieved_passages) > 0
+        assert resp_resp.retrieved_passages[0].title == "Respiratory Surge Statistical Threshold Protocol"
+
+        # Requirement 5: Queries with genuinely insufficient evidence remain insufficient
+        unrelated_request = AssistantAskRequest(
+            question="What are the pediatric cardiac catheterization trial inclusion criteria?",
+            min_similarity=0.30,
+        )
+        unrelated_resp = assistant.ask(session=memory_db_session, request=unrelated_request)
+        assert unrelated_resp.evidence_sufficiency == "INSUFFICIENT"
+        assert len(unrelated_resp.citations) == 0
+        assert unrelated_resp.response_type == "insufficient_refusal"
+
+        # Requirement 6: Citation identifiers and offsets remain valid
+        assert len(mad_resp.citations) > 0
+        for citation in mad_resp.citations:
+            assert citation.citation_id.startswith("E")
+            assert citation.char_start >= 0
+            assert citation.char_end > citation.char_start
+            assert len(citation.excerpt) > 0
+            assert citation.is_verified is True
+
+        get_config.cache_clear()
+
