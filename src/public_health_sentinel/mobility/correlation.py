@@ -19,10 +19,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
-import matplotlib
-matplotlib.use("Agg")  # Non-interactive headless backend
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -175,6 +171,17 @@ def generate_mobility_figures(
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     generated_figures: dict[str, str] = {}
+
+    try:
+        import matplotlib
+        matplotlib.use("Agg")  # Non-interactive headless backend
+        import matplotlib.dates as mdates
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        raise ImportError(
+            "matplotlib is required for mobility figure generation. "
+            "Install matplotlib or full package dependencies."
+        ) from exc
 
     df = aligned_df.copy()
     df["observation_date"] = pd.to_datetime(df["observation_date"])

@@ -19,9 +19,6 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Sequence
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -189,6 +186,16 @@ def plot_cross_correlation_profile(
     """Plot cross-correlation curve across lags for a target region and syndrome."""
     out_file = Path(output_path)
     out_file.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        raise ImportError(
+            "matplotlib is required for plotting cross-correlation profiles. "
+            "Install matplotlib or full package dependencies."
+        ) from exc
 
     # Find matching analysis
     match = next(

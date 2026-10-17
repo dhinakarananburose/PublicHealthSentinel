@@ -107,6 +107,7 @@ A standard Render free web service cannot support PyTorch or Sentence-Transforme
 14. [`frontend/src/pages/AIAssistantPage.tsx`](file:///c:/AI/PublicHealthSentinel/frontend/src/pages/AIAssistantPage.tsx): Added a dedicated "Cloud Portfolio Demo Mode" status badge and explanatory banner.
 15. [`.gitignore`](file:///c:/AI/PublicHealthSentinel/.gitignore): Added `frontend/node_modules/`, `frontend/dist/`, and unignored benchmark synthetic datasets in `data/processed/*.csv`.
 16. [`.env.example`](file:///c:/AI/PublicHealthSentinel/.env.example): Added documentation for demo mode and cloud CORS variables.
+17. [`src/public_health_sentinel/mobility/correlation.py`](file:///c:/AI/PublicHealthSentinel/src/public_health_sentinel/mobility/correlation.py) & [`src/public_health_sentinel/mobility/lag_analysis.py`](file:///c:/AI/PublicHealthSentinel/src/public_health_sentinel/mobility/lag_analysis.py): Decoupled top-level `matplotlib` imports so the web service starts in ~183 MB RAM without requiring `matplotlib` at startup; plotting functions defer `matplotlib` loading with explicit `ImportError` guards.
 
 ---
 
@@ -165,24 +166,24 @@ All verification suites were executed locally prior to declaring deployment read
 
 | Test Suite / Probe | Command | Exit Code | Result | Details |
 | :--- | :--- | :---: | :---: | :--- |
-| **Demo Mode Verification Script** | `python scripts/verify_demo_deployment.py` | `0` | **PASS** | Evaluated 150 requests; 0 torch/ST imports; 222.08 MB RSS |
-| **Backend Demo Mode Suite** | `pytest tests/test_demo_mode.py -v` | `0` | **PASS** | 5/5 passed (Seeder, 403 Guards, Fallback, Refusal, Health) |
-| **Full Backend Regression Suite** | `pytest tests/ -v` | `0` | **PASS** | **213 passed, 1 skipped** (0 failures, 100% backward compatible) |
+| **Demo Mode Verification Script** | `python scripts/verify_demo_deployment.py` | `0` | **PASS** | Evaluated 150 requests; 0 torch/ST/mpl imports; 197.33 MB RSS |
+| **Backend Demo Mode Suite** | `pytest tests/test_demo_mode.py -v` | `0` | **PASS** | 7/7 passed (Seeder, 403 Guards, Fallback, Refusal, Health, Matplotlib decoupling) |
+| **Full Backend Regression Suite** | `pytest tests/ -v` | `0` | **PASS** | **215 passed, 1 skipped** (0 failures, 100% backward compatible) |
 | **Frontend Quality & API Audit** | `npm test` (in `frontend/`) | `0` | **PASS** | **30/30 passed** (All hooks, formatters, and endpoints verified) |
-| **Frontend Production Build** | `npm run build` (in `frontend/`) | `0` | **PASS** | Successfully bundled in 3.11s with manual chunking |
-| **Clean Database Startup Probe** | `seed_demo_data_if_needed()` | `0` | **PASS** | Clean SQLite initialized with 2,700 records in 4.17s |
-| **Zero-Ollama Resilience Probe** | `POST /api/v1/assistant/ask` | `0` | **PASS** | Responds in **94.7ms** with verified `[E1]` citations |
-| **Out-of-Scope Refusal Guard** | `POST /api/v1/assistant/ask` | `0` | **PASS** | Responds in **11.4ms** with `INSUFFICIENT` refusal |
+| **Frontend Production Build** | `npm run build` (in `frontend/`) | `0` | **PASS** | Successfully bundled in 5.24s with manual chunking |
+| **Clean Database Startup Probe** | `seed_demo_data_if_needed()` | `0` | **PASS** | Clean SQLite initialized with 2,700 records in 4.10s |
+| **Zero-Ollama Resilience Probe** | `POST /api/v1/assistant/ask` | `0` | **PASS** | Responds in **40.7ms** with verified `[E1]` citations |
+| **Out-of-Scope Refusal Guard** | `POST /api/v1/assistant/ask` | `0` | **PASS** | Responds in **9.9ms** with `INSUFFICIENT` refusal |
 | **Heavy Model Exclusion Check** | `import torch` check in demo mode | `0` | **PASS** | Neither PyTorch nor SentenceTransformers imported |
 | **Localhost Dependency Audit** | Frontend API Base URL resolution | `0` | **PASS** | Safe protocol prepending and fallback to `localStorage` |
 | **Local Docker Compose Setup** | `docker-compose up` compatibility | `0` | **PASS** | Named volume & local Ollama config preserved intact |
 
 ### 7.1 Measured Process Memory Timeline (Demo Mode)
-* **Baseline Python Interpreter**: `19.20 MB`
-* **App Stack Loaded (FastAPI + Routers + Seeder)**: `206.85 MB` (Startup time: 3.62s)
-* **Steady-State Working Set (Post 150 API calls)**: `222.08 MB`
+* **Baseline Python Interpreter**: `19.35 MB`
+* **App Stack Loaded (FastAPI + Routers + Seeder)**: `183.55 MB` (Startup time: 5.81s)
+* **Steady-State Working Set (Post 150 API calls)**: `197.33 MB`
 * **Render Free Tier Memory Ceiling**: `512.00 MB`
-* **Available Safe Operational Headroom**: `289.92 MB (56.6% safety margin)`
+* **Available Safe Operational Headroom**: `314.67 MB (61.5% safety margin)`
 
 ---
 

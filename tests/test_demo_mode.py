@@ -142,3 +142,61 @@ def test_demo_mode_health_endpoint():
         data = resp.json()
         assert data["demo_mode"] is True
         get_config.cache_clear()
+
+
+def test_lightweight_app_import_and_mobility_analytics_without_matplotlib():
+    """Verify that PublicHealthSentinel core and API operate cleanly when matplotlib is absent."""
+    import sys
+    import pandas as pd
+    from public_health_sentinel.mobility.correlation import compute_correlations, compute_descriptive_statistics
+    from public_health_sentinel.mobility.lag_analysis import compute_lagged_correlations
+
+    with patch.dict(sys.modules, {"matplotlib": None, "matplotlib.pyplot": None, "matplotlib.dates": None}):
+        # 1. API client and app must function
+        client = TestClient(app)
+        resp = client.get("/health")
+        assert resp.status_code == 200
+
+        # 2. Mobility analytics must compute properly without matplotlib
+        df = pd.DataFrame(
+            {
+                "observation_date": ["2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"],
+                "region_id": ["REGION_A", "REGION_A", "REGION_A", "REGION_A"],
+                "syndrome": ["Respiratory", "Respiratory", "Respiratory", "Respiratory"],
+                "report_count": [10.0, 15.0, 20.0, 25.0],
+                "transit_station_pct_change": [-5.0, -10.0, -12.0, -15.0],
+            }
+        )
+        stats_dict = compute_descriptive_statistics(df, ["transit_station_pct_change"])
+        assert "mobility_by_metric" in stats_dict
+
+        corrs = compute_correlations(df, ["transit_station_pct_change"])
+        assert len(corrs) == 1
+
+        lags = compute_lagged_correlations(df, "transit_station_pct_change", min_lag=-1, max_lag=1)
+        assert len(lags) == 1
+
+
+def test_figure_generation_requires_matplotlib(tmp_path):
+    """Verify that calling plotting functions without matplotlib raises an informative ImportError."""
+    import sys
+    import pandas as pd
+    from public_health_sentinel.mobility.correlation import generate_mobility_figures
+    from public_health_sentinel.mobility.lag_analysis import plot_cross_correlation_profile
+
+    df = pd.DataFrame(
+        {
+            "observation_date": ["2026-01-01", "2026-01-02"],
+            "region_id": ["REGION_A", "REGION_A"],
+            "syndrome": ["Respiratory", "Respiratory"],
+            "report_count": [10.0, 15.0],
+            "transit_station_pct_change": [-5.0, -10.0],
+        }
+    )
+
+    with patch.dict(sys.modules, {"matplotlib": None, "matplotlib.pyplot": None, "matplotlib.dates": None}):
+        with pytest.raises(ImportError, match="matplotlib is required for mobility figure generation"):
+            generate_mobility_figures(df, ["transit_station_pct_change"], tmp_path)
+
+        with pytest.raises(ImportError, match="matplotlib is required for plotting cross-correlation profiles"):
+            plot_cross_correlation_profile([], tmp_path / "test.png")

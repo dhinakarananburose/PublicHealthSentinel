@@ -95,14 +95,17 @@ def main():
     mem_startup = get_memory_mb()
     print(f"[2] App Stack Imported in {t_import:.2f}s | Startup Memory: {mem_startup:.2f} MB")
 
-    # Step 3: Check module cleanliness (NO PyTorch, NO SentenceTransformers)
+    # Step 3: Check module cleanliness (NO PyTorch, NO SentenceTransformers, NO Matplotlib at startup)
     torch_loaded = "torch" in sys.modules
     st_loaded = "sentence_transformers" in sys.modules
+    mpl_loaded = "matplotlib" in sys.modules
     print("[3] Dependency Audit:")
     print(f"    - torch imported: {torch_loaded} (Expected: False)")
     print(f"    - sentence_transformers imported: {st_loaded} (Expected: False)")
+    print(f"    - matplotlib imported: {mpl_loaded} (Expected: False)")
     assert not torch_loaded, "CRITICAL: torch must not be imported in demo mode!"
     assert not st_loaded, "CRITICAL: sentence_transformers must not be imported in demo mode!"
+    assert not mpl_loaded, "CRITICAL: matplotlib must not be imported at application startup in demo mode!"
 
     # Step 4: Ephemeral Database Seeding
     engine = get_engine()
