@@ -42,7 +42,6 @@ services:
     name: public-health-sentinel-dashboard
     runtime: static
     plan: free
-    region: oregon
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
