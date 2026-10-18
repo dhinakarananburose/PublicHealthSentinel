@@ -449,13 +449,15 @@ class DemoGenerationProvider(BaseGenerationProvider):
 _active_provider: Optional[BaseGenerationProvider] = None
 
 
-def get_generation_provider() -> BaseGenerationProvider:
+def get_generation_provider(force_new: bool = False) -> BaseGenerationProvider:
     """Retrieve active generation provider based on runtime application configuration."""
     global _active_provider
-    if _active_provider is not None:
+    config = get_config()
+    expected_provider = "demo" if config.demo_mode else config.generation_provider
+
+    if _active_provider is not None and not force_new:
         return _active_provider
 
-    config = get_config()
     if config.generation_provider == "mock":
         _active_provider = MockAnswerGenerationProvider()
     elif config.generation_provider == "demo" or config.demo_mode:
@@ -473,3 +475,9 @@ def set_generation_provider(provider: Optional[BaseGenerationProvider]) -> None:
     """Override generation provider (useful in automated test fixtures)."""
     global _active_provider
     _active_provider = provider
+
+
+def reset_generation_provider() -> None:
+    """Reset the global generation provider instance."""
+    global _active_provider
+    _active_provider = None

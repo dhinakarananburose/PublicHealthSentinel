@@ -101,23 +101,16 @@ def assistant_status_endpoint(
 ) -> AssistantStatusResponse:
     """Retrieve operational readiness status for the assistant subsystem."""
     from public_health_sentinel.config import get_config
-    from public_health_sentinel.db.models import DocumentChunkModel
+    from public_health_sentinel.documents.embeddings import get_embedding_service
 
     cfg = get_config()
     provider = get_generation_provider()
     health = provider.check_health()
-    index_mgr = get_vector_index()
+    emb_svc = get_embedding_service()
+    index_mgr = get_vector_index(embedding_service=emb_svc)
 
     total_passages = index_mgr.total_vectors
-    if total_passages == 0 and cfg.demo_mode:
-        try:
-            total_passages = session.query(DocumentChunkModel).count()
-        except Exception:
-            total_passages = 0
-
-    idx_status = "HEALTHY" if not index_mgr.is_degraded else "DEGRADED"
-    if total_passages == 0:
-        idx_status = "EMPTY"
+    idx_status = "HEALTHY" if not index_mgr.is_degraded and total_passages > 0 else ("EMPTY" if total_passages == 0 else "DEGRADED")
 
     if index_mgr.is_degraded and not cfg.demo_mode:
         overall_status = "INDEX_DEGRADED"

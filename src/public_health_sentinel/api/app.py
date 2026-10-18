@@ -31,7 +31,7 @@ logger = logging.getLogger("public_health_sentinel.api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage application lifespan: initialize database schemas on startup."""
+    """Manage application lifespan: initialize database schemas and evidence index on startup."""
     try:
         init_db()
         logger.info("Database schemas initialized successfully.")
@@ -39,8 +39,12 @@ async def lifespan(app: FastAPI):
         if config.demo_mode:
             from public_health_sentinel.db.demo_seeder import seed_demo_data_if_needed
             seed_demo_data_if_needed()
+
+        from public_health_sentinel.documents.index import ensure_evidence_index_initialized
+        index_res = ensure_evidence_index_initialized()
+        logger.info("Evidence vector index startup verification complete: %s", index_res.get("message"))
     except Exception as exc:
-        logger.error("Failed to initialize database during startup: %s", exc)
+        logger.error("Failed to initialize database or vector index during startup: %s", exc)
     yield
 
 

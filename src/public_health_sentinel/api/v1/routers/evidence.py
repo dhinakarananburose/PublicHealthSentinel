@@ -54,8 +54,9 @@ def search_evidence_endpoint(
     request: EvidenceSearchRequest,
     session: Session = Depends(get_db_session),
 ) -> EvidenceSearchResponse:
-    """Execute natural-language semantic evidence retrieval."""
-    service = SemanticRetrievalService()
+    emb_svc = get_embedding_service()
+    index = get_vector_index()
+    service = SemanticRetrievalService(vector_index=index, embedding_service=emb_svc)
 
     try:
         search_res = service.search(
@@ -128,8 +129,8 @@ def search_evidence_endpoint(
 def get_evidence_status_endpoint(
     session: Session = Depends(get_db_session),
 ) -> EvidenceSubsystemStatusResponse:
-    """Report vector indexing and retrieval subsystem health."""
-    index = get_vector_index()
+    emb_svc = get_embedding_service()
+    index = get_vector_index(embedding_service=emb_svc)
     index_status = index.status()
 
     # Query distinct document count in database

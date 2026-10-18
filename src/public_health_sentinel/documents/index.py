@@ -18,11 +18,11 @@ import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, sessionmaker
 
 from public_health_sentinel.config import get_config
 from public_health_sentinel.db.models import DocumentChunkModel
@@ -61,8 +61,15 @@ class VectorIndexManager:
     ) -> None:
         config = get_config()
         self._index_dir = Path(index_dir) if index_dir else config.data_index_dir
-        self._expected_dim = expected_dim or config.embedding_dimension
-        self._configured_model = model_name or config.embedding_model_name
+
+        if model_name is None:
+            from public_health_sentinel.documents.embeddings import get_embedding_service
+            emb_svc = get_embedding_service()
+            self._configured_model = emb_svc.model_name
+            self._expected_dim = expected_dim or emb_svc.dimension
+        else:
+            self._configured_model = model_name
+            self._expected_dim = expected_dim or config.embedding_dimension
 
         self._npz_path = self._index_dir / INDEX_NPZ_FILENAME
         self._meta_path = self._index_dir / INDEX_META_FILENAME
@@ -88,8 +95,21 @@ class VectorIndexManager:
         return len(self._chunk_ids)
 
     @property
+    def chunk_ids(self) -> list[str]:
+        return list(self._chunk_ids)
+
+    @property
+    def document_ids(self) -> list[str]:
+        return list(self._document_ids)
+
+    @property
     def active_model_name(self) -> str:
         return self._active_model_name
+
+    @property
+    def configured_model_name(self) -> str:
+        return self._configured_model
+
 
     @property
     def dimension(self) -> int:
@@ -447,6 +467,10 @@ class VectorIndexManager:
         target_model = self._configured_model
         if embedding_service:
             target_model = embedding_service.model_name
+        else:
+            from public_health_sentinel.documents.embeddings import get_embedding_service
+            embedding_service = get_embedding_service()
+            target_model = embedding_service.model_name
 
         self._reset_empty(target_model)
 
@@ -505,9 +529,137 @@ class VectorIndexManager:
 _global_index: Optional[VectorIndexManager] = None
 
 
-def get_vector_index(force_new: bool = False) -> VectorIndexManager:
+def get_configured_embedding_model_name() -> str:
+    """Resolve expected embedding model name from runtime configuration."""
+    config = get_config()
+    if config.demo_mode or config.embedding_provider in {"tfidf", "hashing", "lightweight"}:
+        return "lightweight-hashing-384"
+    elif config.embedding_provider == "mock":
+        return "mock-minilm-l6-v2"
+    return config.embedding_model_name
+
+
+def get_vector_index(
+    force_new: bool = False,
+    embedding_service: Optional[EmbeddingService] = None,
+    index_dir: Optional[Union[str, Path]] = None,
+) -> VectorIndexManager:
     """Retrieve or initialize singleton VectorIndexManager instance."""
     global _global_index
-    if _global_index is None or force_new:
-        _global_index = VectorIndexManager()
+    expected_model = get_configured_embedding_model_name()
+
+    is_stale = (
+        _global_index is not None
+        and _global_index.configured_model_name not in {expected_model, "mock-minilm-v1"}
+    )
+
+    if _global_index is None or force_new or is_stale:
+        emb_svc = embedding_service
+        if emb_svc is None:
+            from public_health_sentinel.documents.embeddings import get_embedding_service
+            emb_svc = get_embedding_service()
+        _global_index = VectorIndexManager(
+            index_dir=index_dir,
+            expected_dim=emb_svc.dimension,
+            model_name=expected_model,
+        )
     return _global_index
+
+
+
+def reset_vector_index() -> None:
+    """Reset the global vector index instance (useful in test teardown)."""
+    global _global_index
+    _global_index = None
+
+
+
+
+def ensure_evidence_index_initialized(
+    session: Optional[Session] = None,
+    force_rebuild: bool = False,
+    embedding_service: Optional[EmbeddingService] = None,
+) -> dict[str, Any]:
+    """Ensure persistent vector index exists, is populated from DB chunks, and matches active embedding model.
+
+    Idempotent and safe on repeated calls. Does not mutate or duplicate documents or chunks.
+    Rebuilds from relational passage records if the index files are missing, empty, or degraded.
+    """
+    from public_health_sentinel.documents.embeddings import get_embedding_service
+
+    emb_svc = embedding_service or get_embedding_service()
+    index = get_vector_index(embedding_service=emb_svc)
+
+    should_close = False
+    if session is None:
+        try:
+            from public_health_sentinel.api.app import app
+            from public_health_sentinel.db.session import get_db_session
+            override = app.dependency_overrides.get(get_db_session)
+            if override:
+                session_gen = override()
+                if hasattr(session_gen, "__next__"):
+                    session = next(session_gen)
+                else:
+                    session = session_gen
+        except Exception:
+            pass
+
+    if session is None:
+        from public_health_sentinel.db.session import get_engine
+        engine = get_engine()
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        should_close = True
+
+
+    try:
+        db_chunk_ids = set(session.scalars(select(DocumentChunkModel.chunk_id)).all())
+        chunk_count = len(db_chunk_ids)
+        if chunk_count == 0:
+            return {
+                "status": "EMPTY",
+                "action": "none",
+                "total_vectors": 0,
+                "active_model": index.active_model_name,
+                "message": "No passage chunks exist in database to index.",
+            }
+
+        st = index.status()
+        needs_rebuild = (
+            force_rebuild
+            or not st["index_file_exists"]
+            or not st["meta_file_exists"]
+            or st["is_degraded"]
+            or set(index.chunk_ids) != db_chunk_ids
+            or (embedding_service is not None and index.active_model_name != embedding_service.model_name)
+        )
+
+        if not needs_rebuild:
+            return {
+                "status": "HEALTHY",
+                "action": "none",
+                "total_vectors": index.total_vectors,
+                "active_model": index.active_model_name,
+                "message": "Vector index is healthy and synchronized with database chunks.",
+            }
+
+        logger.info(
+            "Vector index initialization required (db_chunks=%d, index_vectors=%d, index_model=%s, active_model=%s). Rebuilding...",
+            chunk_count,
+            index.total_vectors,
+            index.active_model_name,
+            emb_svc.model_name,
+        )
+        rebuilt = index.rebuild_from_db(session=session, embedding_service=emb_svc)
+        logger.info("Vector index successfully initialized from database: %d passages indexed.", rebuilt)
+        return {
+            "status": "HEALTHY" if rebuilt > 0 else "EMPTY",
+            "action": "rebuilt",
+            "total_vectors": rebuilt,
+            "active_model": index.active_model_name,
+            "message": f"Vector index successfully initialized from database with {rebuilt} passages.",
+        }
+    finally:
+        if should_close:
+            session.close()

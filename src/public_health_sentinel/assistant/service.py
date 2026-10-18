@@ -72,6 +72,11 @@ class EvidenceGroundedAssistant:
     def provider(self) -> BaseGenerationProvider:
         return self._provider
 
+    @property
+    def retrieval_service(self) -> SemanticRetrievalService:
+        return self._retrieval_service
+
+
     def ask(
         self,
         session: Session,
@@ -418,9 +423,17 @@ class EvidenceGroundedAssistant:
 _global_assistant: Optional[EvidenceGroundedAssistant] = None
 
 
-def get_assistant() -> EvidenceGroundedAssistant:
+def get_assistant(force_new: bool = False) -> EvidenceGroundedAssistant:
     """Retrieve global assistant instance."""
     global _global_assistant
-    if _global_assistant is None:
+    if _global_assistant is None or force_new:
         _global_assistant = EvidenceGroundedAssistant()
     return _global_assistant
+
+
+
+
+def reset_assistant() -> None:
+    """Reset the global assistant instance (useful in test teardown)."""
+    global _global_assistant
+    _global_assistant = None

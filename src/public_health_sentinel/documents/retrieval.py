@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 import numpy as np
 
@@ -99,8 +99,8 @@ class SemanticRetrievalService:
         vector_index: Optional[VectorIndexManager] = None,
         embedding_service: Optional[EmbeddingService] = None,
     ) -> None:
-        self._index = vector_index or get_vector_index()
         self._embedding_service = embedding_service or get_embedding_service()
+        self._index = vector_index or get_vector_index(embedding_service=self._embedding_service)
 
     @property
     def vector_index(self) -> VectorIndexManager:
@@ -153,21 +153,27 @@ class SemanticRetrievalService:
             )
 
         query_id = f"qry-{uuid.uuid4().hex[:10]}"
-        cfg = get_config()
 
-        # In demo mode, route directly to database passage matching
-        if cfg.demo_mode:
-            return self._search_db_fallback(
-                session=session,
-                cleaned_query=cleaned_query,
-                query_id=query_id,
-                top_k=top_k,
-                min_similarity=min_similarity,
-                document_id=document_id,
-                source_publisher=source_publisher,
-            )
+        # Handle missing, empty, or degraded index files by rebuilding safely from existing DB chunks
+        if self._index.total_vectors == 0 or self._index.is_degraded:
+            chunk_count_stmt = select(func.count(DocumentChunkModel.chunk_id))
+            db_chunk_count = session.execute(chunk_count_stmt).scalar() or 0
+            if db_chunk_count > 0:
+                logger.info(
+                    "Vector index requires rebuild (index_vectors=%d, degraded=%s, db_chunks=%d). "
+                    "Rebuilding vector index from relational passage records...",
+                    self._index.total_vectors,
+                    self._index.is_degraded,
+                    db_chunk_count,
+                )
+                self._index.rebuild_from_db(session=session, embedding_service=self._embedding_service)
 
-        # If index is empty, return early with empty result
+
+
+
+
+
+        # If index remains empty because database contains no chunks, return early
         if self._index.total_vectors == 0:
             return EvidenceSearchResult(
                 query=cleaned_query,
@@ -211,47 +217,14 @@ class SemanticRetrievalService:
                     ),
                 )
 
-        config = get_config()
-        # Search index or fallback to direct database semantic matching in demo mode / degraded index
-        if config.demo_mode or self._index.is_degraded or self._index.total_vectors == 0:
-            stmt = select(DocumentChunkModel)
-            if document_id:
-                stmt = stmt.where(DocumentChunkModel.document_id == document_id.strip())
-            if source_publisher:
-                stmt = stmt.where(DocumentChunkModel.source_publisher == source_publisher.strip())
-            db_chunks = list(session.execute(stmt).scalars().all())
-            if not db_chunks:
-                return EvidenceSearchResult(
-                    query=cleaned_query,
-                    query_id=query_id,
-                    total_results=0,
-                    embedding_model=self._embedding_service.model_name,
-                    items=[],
-                    synthetic_experiment_notice=(
-                        "SYNTHETIC-DATA NOTICE: Reference documents were evaluated; no passage met the similarity threshold."
-                    ),
-                )
+        ranked_hits = self._index.search(
+            query_vector=query_vector,
+            top_k=top_k,
+            document_id=document_id.strip() if document_id else None,
+            candidate_chunk_ids=candidate_chunk_ids,
+            min_similarity=min_similarity,
+        )
 
-            chunk_texts = [c.text for c in db_chunks]
-            batch_vectors = self._embedding_service.embed_batch(chunk_texts)
-            scores = np.dot(batch_vectors, query_vector)
-
-            scored_candidates = []
-            for chunk_obj, score in zip(db_chunks, scores):
-                sc = float(score)
-                if sc >= min_similarity:
-                    scored_candidates.append((chunk_obj.chunk_id, sc))
-
-            scored_candidates.sort(key=lambda x: (-x[1], x[0]))
-            ranked_hits = scored_candidates[:top_k]
-        else:
-            ranked_hits = self._index.search(
-                query_vector=query_vector,
-                top_k=top_k,
-                document_id=document_id.strip() if document_id else None,
-                candidate_chunk_ids=candidate_chunk_ids,
-                min_similarity=min_similarity,
-            )
 
         if not ranked_hits:
             return EvidenceSearchResult(

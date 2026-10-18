@@ -240,6 +240,7 @@ class HashingTfidfEmbeddingService:
             alternate_sign=False,
             ngram_range=(1, 2),
             token_pattern=r"(?u)\b\w+\b",
+            stop_words="english",
         )
 
     @property
@@ -278,11 +279,27 @@ def get_embedding_service(
 ) -> EmbeddingService:
     """Retrieve or initialize singleton embedding service instance."""
     global _active_service
-    if _active_service is not None and not force_new and provider is None and model_name is None:
-        return _active_service
-
     config = get_config()
     chosen_provider = (provider or config.embedding_provider).lower()
+
+    # Determine if existing service matches the requested configuration
+    matches_current = False
+    if _active_service is not None and not force_new and provider is None and model_name is None:
+        if chosen_provider == "mock" and isinstance(_active_service, DeterministicMockEmbeddingService):
+            matches_current = True
+        elif (chosen_provider in {"tfidf", "hashing", "lightweight"} or config.demo_mode) and isinstance(
+            _active_service, HashingTfidfEmbeddingService
+        ):
+            matches_current = True
+        elif (
+            chosen_provider == "sentence_transformer"
+            and not config.demo_mode
+            and isinstance(_active_service, LocalSentenceTransformerEmbeddingService)
+        ):
+            matches_current = True
+
+    if matches_current and _active_service is not None:
+        return _active_service
 
     if chosen_provider == "mock":
         service: EmbeddingService = DeterministicMockEmbeddingService(
@@ -305,3 +322,8 @@ def get_embedding_service(
         _active_service = service
     return service
 
+
+def reset_embedding_service() -> None:
+    """Reset the global active embedding service instance (useful in test teardown)."""
+    global _active_service
+    _active_service = None

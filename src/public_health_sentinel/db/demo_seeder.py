@@ -257,10 +257,11 @@ def seed_demo_data_if_needed(engine_or_session_override=None) -> dict[str, int]:
                 logger.info("Seeded %d anomaly detection results for demo mode.", inserted_anom)
 
         # 4. Reference Protocol Documents & Passage Chunks
-        doc_count = session.scalar(select(func.count(DocumentMetadataModel.id)))
-        if doc_count == 0:
-            logger.info("Populating demo reference protocol documents and passage chunks...")
-            for fixture in DEMO_FIXTURE_DOCUMENTS:
+        for fixture in DEMO_FIXTURE_DOCUMENTS:
+            existing_doc = session.scalar(
+                select(DocumentMetadataModel).where(DocumentMetadataModel.filename == fixture["filename"])
+            )
+            if existing_doc is None:
                 doc_model, is_dup = ingest_document(
                     session=session,
                     filename=fixture["filename"],
@@ -272,8 +273,16 @@ def seed_demo_data_if_needed(engine_or_session_override=None) -> dict[str, int]:
                 session.commit()
                 if not is_dup:
                     seeded_counts["documents"] += 1
+            else:
+                doc_model = existing_doc
 
-                # Create chunks directly without requiring SentenceTransformer / PyTorch
+            # Verify chunks exist for this document
+            chunk_count = session.scalar(
+                select(func.count(DocumentChunkModel.id)).where(
+                    DocumentChunkModel.document_id == doc_model.document_id
+                )
+            )
+            if chunk_count == 0:
                 doc_chunks = split_text_into_chunks(
                     text=fixture["content"],
                     document_id=doc_model.document_id,
@@ -303,12 +312,18 @@ def seed_demo_data_if_needed(engine_or_session_override=None) -> dict[str, int]:
                     session.add(chunk_model)
                     seeded_counts["chunks"] += 1
 
-            session.commit()
+                session.commit()
+
+        if seeded_counts["documents"] > 0 or seeded_counts["chunks"] > 0:
             logger.info(
                 "Seeded %d demo documents and %d passage chunks.",
                 seeded_counts["documents"],
                 seeded_counts["chunks"],
             )
+
+        # Ensure evidence vector index is synchronized with database chunks
+        from public_health_sentinel.documents.index import ensure_evidence_index_initialized
+        ensure_evidence_index_initialized(session=session)
 
     except Exception as exc:
         logger.error("Failed to seed demo data: %s", exc, exc_info=True)
