@@ -1,0 +1,407 @@
+{
+  "evaluation_name": "PublicHealthSentinel Production Semantic Retrieval Evaluation",
+  "evaluation_timestamp_utc": "2026-10-18T12:38:28.471216+00:00",
+  "api_base_url": "https://public-health-sentinel-api.onrender.com",
+  "search_endpoint": "/api/v1/evidence/search",
+  "active_embedding_model": "lightweight-hashing-384",
+  "similarity_threshold": 0.3,
+  "top_k": 5,
+  "query_counts": {
+    "total_queries": 13,
+    "relevant_queries": 8,
+    "ambiguous_queries": 2,
+    "negative_control_queries": 3
+  },
+  "metrics": {
+    "recall_at_1": 0.7,
+    "recall_at_3": 0.7,
+    "recall_at_5": 0.7,
+    "precision_at_1": 0.7,
+    "precision_at_3": 0.2333,
+    "precision_at_5": 0.14,
+    "mean_reciprocal_rank_mrr": 0.7,
+    "negative_query_rejection_rate": 1.0,
+    "mean_latency_ms": 350.56,
+    "p95_latency_ms": 702.77
+  },
+  "http_summary": {
+    "total_requests": 13,
+    "successful_requests": 13,
+    "failed_requests": 0,
+    "timeout_requests": 0,
+    "errors": []
+  },
+  "limitations": [
+    "Lightweight hashing TF-IDF embeddings (384-D) do not perform dense semantic expansion; retrieval quality depends on token and n-gram overlap with indexed passage text.",
+    "The 0.30 similarity threshold suppresses partially relevant passages that do not cross the score floor.",
+    "The evaluation corpus is restricted to the 6 simulated demo documents (10 indexed passages) available in production.",
+    "Sequential request pacing is applied to respect free-tier hosting concurrency limits."
+  ],
+  "synthetic_data_notice": "SYNTHETIC-DATA NOTICE: All observations, indicators, and benchmark documents are part of a simulated research prototype. Documents represent reference material and guidelines for methodology testing. High similarity scores reflect semantic alignment of phrasing, not clinical validation or real-world epidemiology.",
+  "query_results": [
+    {
+      "query_id": "rel-01-mad-dispersion",
+      "query": "How does Rolling Median Absolute Deviation (MAD) calculate dispersion and handle outliers?",
+      "category": "relevant",
+      "topic": "Rolling MAD dispersion formula and outlier robustness",
+      "expected_document_titles": [
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 498.99,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-230d0aba3813_c0000_05f3f8be",
+          "document_id": "doc-230d0aba3813",
+          "title": "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol",
+          "similarity_score": 0.41118505597114563
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-02-mad-outlier-robustness",
+      "query": "What breakdown point gives Rolling MAD robustness against extreme outbreak outliers?",
+      "category": "relevant",
+      "topic": "Robustness of MAD to outliers and 50% breakdown point",
+      "expected_document_titles": [
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 257.39,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-230d0aba3813_c0000_05f3f8be",
+          "document_id": "doc-230d0aba3813",
+          "title": "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol",
+          "similarity_score": 0.4019128382205963
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-03-mad-scale-factor",
+      "query": "Why is raw MAD scaled by 1.4826 in normal distribution scale estimation?",
+      "category": "relevant",
+      "topic": "Scaling raw MAD by 1.4826 for normal scale estimation",
+      "expected_document_titles": [
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 277.93,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-230d0aba3813_c0000_05f3f8be",
+          "document_id": "doc-230d0aba3813",
+          "title": "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol",
+          "similarity_score": 0.3688364028930664
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-04-syndromic-anomaly-detection",
+      "query": "What anomaly detection methods are compared for syndromic surveillance time series?",
+      "category": "relevant",
+      "topic": "Syndromic surveillance anomaly detection method comparison",
+      "expected_document_titles": [
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 247.1,
+      "total_results": 0,
+      "retrieved_items": [],
+      "found_rank": null,
+      "retrieved_at_rank_1": false,
+      "retrieved_at_rank_3": false,
+      "retrieved_at_rank_5": false,
+      "reciprocal_rank": 0.0,
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-05-baseline-dispersion",
+      "query": "How is statistical baseline dispersion measured in syndromic surveillance time series?",
+      "category": "relevant",
+      "topic": "Statistical baseline dispersion measurement",
+      "expected_document_titles": [
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 702.77,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-230d0aba3813_c0000_05f3f8be",
+          "document_id": "doc-230d0aba3813",
+          "title": "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol",
+          "similarity_score": 0.3225391209125519
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-06-respiratory-surge-threshold",
+      "query": "What statistical threshold triggers an emergency department respiratory surge alert?",
+      "category": "relevant",
+      "topic": "Respiratory surveillance surge thresholds",
+      "expected_document_titles": [
+        "Respiratory Surge Statistical Threshold Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 682.76,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-53ed0a44d875_c0000_4a498e6d",
+          "document_id": "doc-53ed0a44d875",
+          "title": "Respiratory Surge Statistical Threshold Protocol",
+          "similarity_score": 0.331501841545105
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-07-operational-review",
+      "query": "What operational review is required within 4 hours to verify surveillance alert validity?",
+      "category": "relevant",
+      "topic": "Operational interpretation and 4-hour review of surveillance thresholds",
+      "expected_document_titles": [
+        "Respiratory Surge Statistical Threshold Protocol",
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 306.8,
+      "total_results": 0,
+      "retrieved_items": [],
+      "found_rank": null,
+      "retrieved_at_rank_1": false,
+      "retrieved_at_rank_3": false,
+      "retrieved_at_rank_5": false,
+      "reciprocal_rank": 0.0,
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "rel-08-mobility-lead-lag",
+      "query": "What transit and workplace indicators precede respiratory clinic surges by 3 to 7 days?",
+      "category": "relevant",
+      "topic": "Mobility indicators in syndromic surveillance lead-lag",
+      "expected_document_titles": [
+        "Mobility Index Integration and Lead-Lag Methodology"
+      ],
+      "http_status": 200,
+      "latency_ms": 257.64,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-0ae9332698ef_c0000_f4fae473",
+          "document_id": "doc-0ae9332698ef",
+          "title": "Mobility Index Integration and Lead-Lag Methodology",
+          "similarity_score": 0.33446434140205383
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "amb-01-mad-spread",
+      "query": "Measuring data spread using median absolute deviation instead of standard deviation",
+      "category": "ambiguous",
+      "topic": "Paraphrase: non-parametric spread using MAD",
+      "expected_document_titles": [
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 235.56,
+      "total_results": 0,
+      "retrieved_items": [],
+      "found_rank": null,
+      "retrieved_at_rank_1": false,
+      "retrieved_at_rank_3": false,
+      "retrieved_at_rank_5": false,
+      "reciprocal_rank": 0.0,
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "amb-02-batching-artifacts",
+      "query": "Investigating electronic health record batching artifacts after a hospital surge warning",
+      "category": "ambiguous",
+      "topic": "Paraphrase: secondary review to rule out batching artifacts",
+      "expected_document_titles": [
+        "Respiratory Surge Statistical Threshold Protocol",
+        "Syndromic Surveillance Statistical Anomaly Detection Methodology Protocol"
+      ],
+      "http_status": 200,
+      "latency_ms": 253.9,
+      "total_results": 1,
+      "retrieved_items": [
+        {
+          "rank": 1,
+          "chunk_id": "doc-53ed0a44d875_c0001_ddf5cfd9",
+          "document_id": "doc-53ed0a44d875",
+          "title": "Respiratory Surge Statistical Threshold Protocol",
+          "similarity_score": 0.36778488755226135
+        }
+      ],
+      "found_rank": 1,
+      "retrieved_at_rank_1": true,
+      "retrieved_at_rank_3": true,
+      "retrieved_at_rank_5": true,
+      "reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "precision_at_3": 0.3333,
+      "precision_at_5": 0.2,
+      "negative_rejected": null,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "neg-01-quantum",
+      "query": "Explain quantum entanglement and quantum computing",
+      "category": "negative_control",
+      "topic": "Negative control: Quantum physics",
+      "expected_document_titles": [],
+      "http_status": 200,
+      "latency_ms": 250.59,
+      "total_results": 0,
+      "retrieved_items": [],
+      "found_rank": null,
+      "retrieved_at_rank_1": false,
+      "retrieved_at_rank_3": false,
+      "retrieved_at_rank_5": false,
+      "reciprocal_rank": 0.0,
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "negative_rejected": true,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "neg-02-capital-france",
+      "query": "What is the capital of France and its historical architecture?",
+      "category": "negative_control",
+      "topic": "Negative control: European geography",
+      "expected_document_titles": [],
+      "http_status": 200,
+      "latency_ms": 272.1,
+      "total_results": 0,
+      "retrieved_items": [],
+      "found_rank": null,
+      "retrieved_at_rank_1": false,
+      "retrieved_at_rank_3": false,
+      "retrieved_at_rank_5": false,
+      "reciprocal_rank": 0.0,
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "negative_rejected": true,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    },
+    {
+      "query_id": "neg-03-autonomous-driving",
+      "query": "Techniques for training convolutional neural networks for autonomous vehicle lane detection",
+      "category": "negative_control",
+      "topic": "Negative control: Autonomous vehicle computer vision",
+      "expected_document_titles": [],
+      "http_status": 200,
+      "latency_ms": 313.71,
+      "total_results": 0,
+      "retrieved_items": [],
+      "found_rank": null,
+      "retrieved_at_rank_1": false,
+      "retrieved_at_rank_3": false,
+      "retrieved_at_rank_5": false,
+      "reciprocal_rank": 0.0,
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "negative_rejected": true,
+      "error_message": null,
+      "embedding_model": "lightweight-hashing-384"
+    }
+  ]
+}
